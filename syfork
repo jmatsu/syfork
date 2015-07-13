@@ -76,12 +76,12 @@ find_forked() {
 
     cd "$_REPO_PATH"
 
-    if has_repository_url "${_SUPER}"
-        git fetch "${SUPER}"
+    if has_repository_url "${_SUPER}"; then
+        git fetch "${_SUPER}"
     elif has_repository_url "${_REMOTE}"; then
         if _SUPER_REPO=`is_forked $(get_repository_url "${_REMOTE}")`; then
-            git remote add "${_SUPER}" "${_SUPER_REPO}"
-            git fetch "${SUPER}"
+            git remote add "${_SUPER}" "git@github.com:${_SUPER_REPO}"
+            git fetch "${_SUPER}"
         else
             echo "${_MY_NAME}: Not forked repository. - '$1'"
         fi
