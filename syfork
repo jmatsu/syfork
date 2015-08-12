@@ -116,11 +116,11 @@ do
           exit 0
           ;;
       '-r'|'--remote' )
-          assert_if_needs_one "$1" "$2"
+          assert_if_needs_one "$1" "${2:-}"
           _REMOTE="$2"
           ;;
       '-s'|'--super' )
-          assert_if_needs_one "$1" "$2"
+          assert_if_needs_one "$1" "${2:-}"
           _SUPER="$2"
           ;;
       -*) # unregistered options
