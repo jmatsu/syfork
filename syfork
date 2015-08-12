@@ -38,13 +38,6 @@ show_version() {
     echo "${_MY_VERSION}"
 }
 
-where_no_arg_if_needs_one() {
-    if [ -z "$2" ] || [[ "$2" =~ ^-.* ]]; then
-        echo "${_MY_NAME}: '$1' requires one argument"
-        exit 1;
-    fi
-}
-
 is_forked() {
     set +u
     curl -sL $1 | grep "forked from" | sed -e 's/.*<a .*">//g' -e 's/<\/a>.*//g' 2>/dev/null
@@ -90,43 +83,58 @@ find_forked() {
     fi
 }
 
+function assert_if_needs_one() {
+  if [ -z "$2" ] || [[ "$2" =~ ^-.* ]]; then
+      echo "${_MY_NAME}: '$1' requires one argument" > /dev/stderr
+      exit 1;
+  fi
+  _global_opt_flag=1
+}
+
 _PWD=`pwd`
 _REMOTE="origin"
 _SUPER="super"
 _REPOS=()
 
+unset _global_opt_flag
+
 for OPT in "$@"
 do
-    case "$OPT" in
-        '-h'|'--help' )
-            show_usage
-            exit 0
-            ;;
-        '--version' )
-            show_version
-            exit 0
-            ;;
-        '-r'|'--remote' )
-            where_no_arg_if_needs_one "$1" "$2"
-            _REMOTE="$2"
-            shift 2
-            ;;
-        '-s'|'--super' )
-            where_no_arg_if_needs_one "$1" "$2"
-            _SUPER="$2"
-            shift 2
-            ;;
-        -*)
-            echo "${_MY_NAME}: Illegal option - '$1'"
-            show_options
-            exit 1
-            ;;
-        *)
-            _REPOS+=("$1")
-            shift 1
-            ;;
-    esac
+  [ ! -z "${_global_opt_flag:-}" ]&&{
+    _global_opt_flag=
+    shift 1
+    continue
+  }
+
+  case "$OPT" in
+      '-h'|'--help' )
+          show_usage
+          exit 0
+          ;;
+      '--version' )
+          show_version
+          exit 0
+          ;;
+      '-r'|'--remote' )
+          assert_if_needs_one "$1" "$2"
+          _REMOTE="$2"
+          ;;
+      '-s'|'--super' )
+          assert_if_needs_one "$1" "$2"
+          _SUPER="$2"
+          ;;
+      -*) # unregistered options
+          _NOT_REGISTERED_OPTS="${_NOT_REGISTERED_OPTS} $1"
+          ;;
+      *) # arguments which is not option
+          _REPOS+=( $1 )
+          ;;
+  esac
+
+  shift 1
 done
+
+unset _global_opt_flag
 
 # for xargs
 export -f find_forked has_repository_url get_repository_url is_forked
