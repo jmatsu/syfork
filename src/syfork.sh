@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -e
 
 _MY_NAME=$(basename $0)
 _MY_VERSION='0.1'
@@ -29,8 +29,8 @@ show_options() {
     echo "Available options:"
     echo "  -h, --help"
     echo "      --version"
-    echo "  -r, --remote # remote for your repository"
-    echo "  -s, --super # remote for super repository"
+    echo "  -r, --remote # remote name for your repository"
+    echo "  -s, --super # remote name for super repository"
     echo "-----------------------"
 }
 
@@ -39,11 +39,7 @@ show_version() {
 }
 
 is_forked() {
-    set +u
     curl -sL $1 | grep "forked from" | sed -e 's/.*<a .*">//g' -e 's/<\/a>.*//g' 2>/dev/null
-    local is_forked=${PIPESTATUS[1]}
-    set -u
-    return ${is_forked}
 }
 
 get_repository_url() {
@@ -51,15 +47,11 @@ get_repository_url() {
 }
 
 has_repository_url() {
-    set +u
     git config --get remote.$1.url 1> /dev/null
-    local ret=$?
-    set -u
-    return ${ret}
 }
 
 find_forked() {
-    cd $_PWD
+    cd ${_PWD}
 
     if [ -d "$1" ]; then
         _REPO_PATH="$1"
@@ -67,7 +59,7 @@ find_forked() {
         _REPO_PATH="${_PWD%/}/$1"
     fi
 
-    cd "$_REPO_PATH"
+    cd "${_REPO_PATH}"
 
     if has_repository_url "${_SUPER}"; then
         git fetch "${_SUPER}"
@@ -93,7 +85,7 @@ function assert_if_needs_one() {
 
 _PWD=`pwd`
 _REMOTE="origin"
-_SUPER="super"
+_SUPER="syfork"
 _REPOS=()
 
 unset _global_opt_flag
@@ -116,11 +108,11 @@ do
           exit 0
           ;;
       '-r'|'--remote' )
-          assert_if_needs_one "$1" "$2"
+          assert_if_needs_one "$1" "${2:-}"
           _REMOTE="$2"
           ;;
       '-s'|'--super' )
-          assert_if_needs_one "$1" "$2"
+          assert_if_needs_one "$1" "${2:-}"
           _SUPER="$2"
           ;;
       -*) # unregistered options
